@@ -19,9 +19,8 @@ int main(int argc, char** argv) {
 
 	memset((void *) &hints, 0, sizeof(struct addrinfo));
 	
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_DGRAM;
 
 	int rc = getaddrinfo(argv[1], argv[2], &hints, &res);
 	
@@ -56,7 +55,7 @@ int main(int argc, char** argv) {
 		socklen_t clientelen = sizeof(struct sockaddr);
 
 		int bytes = recvfrom(sd, (void *) buffer, MAXBUFFER - 1,
-				0, &cliente, &clientelen);
+			'\0', &cliente, &clientelen);
 		if (bytes == -1) {
 			std::cerr << "ERROR: no se reciben bytes\n";
                 	return -1;
@@ -77,6 +76,7 @@ int main(int argc, char** argv) {
 					localtime(&tiempo));
 
 				sendto(sd, buffer, tam, 0, &cliente, clientelen);
+				buffer[tam] = '\0';
 				break;
 			//Devolvemos la fecha
 			case 'd':
@@ -85,17 +85,16 @@ int main(int argc, char** argv) {
                                         localtime(&tiempo));
 
 				sendto(sd, buffer, tam, 0, &cliente, clientelen);
+				buffer[tam] = '\0';
 				break;
 			//Cerramos el proceso del servidor
 			case 'q':
 				std::cout << "Saliendo...\n";
 				activo = false;
-				sendto(sd, buffer, tam, 0, &cliente, clientelen);
 				break;
 			//Comando no soportado
 			default:
 				std::cout << "Comando no soportado " << buffer[0] << "\n";
-				sendto(sd, buffer, tam, 0, &cliente, clientelen);
 				break;
 		}
 	}

@@ -10,7 +10,7 @@ const size_t MAXBUFFER = 80;
 
 int main(int argc, char** argv) {
 	if (argc != 3) {
-		std::cerr << "Uso: ./Ejercicio3 [IP] [puerto]\n";
+		std::cerr << "Uso: ./Ejercicio4 [IP] [puerto]\n";
 		return -1;
 	}
 

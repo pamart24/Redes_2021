@@ -59,6 +59,8 @@ int main(int argc, char** argv) {
 
 	if (clientesd == -1) {
                 std::cerr << "ERROR: fallo en accept\n";
+		close(clientesd);
+		close(sd);
                 return -1;
 	}
 

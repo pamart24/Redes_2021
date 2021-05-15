@@ -110,6 +110,7 @@ int main(int argc, char** argv) {
 
 	if (bind(sd, res->ai_addr, res->ai_addrlen) == -1) {
 		std::cerr << "ERROR: fallo en la asignacion de addr a socket\n";
+		close(sd);
 		return -1;
 	}
 

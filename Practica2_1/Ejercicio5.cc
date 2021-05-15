@@ -40,6 +40,8 @@ int main(int argc, char** argv) {
 
 	if(servidorsd == 1) {
 		std::cerr << "ERROR: fallo al conectarse con el servidor\n";
+		close(sd);
+		close(servidorsd);
 		return -1;
 	}
 

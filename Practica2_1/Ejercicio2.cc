@@ -58,6 +58,7 @@ int main(int argc, char** argv) {
 			'\0', &cliente, &clientelen);
 		if (bytes == -1) {
 			std::cerr << "ERROR: no se reciben bytes\n";
+			close(sd);
                 	return -1;
 		}
 

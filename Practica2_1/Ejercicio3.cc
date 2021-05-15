@@ -42,11 +42,13 @@ int main(int argc, char** argv) {
 
 	if (sendto(sd, argv[3], strlen(argv[3]) + 1, 0, res->ai_addr, res->ai_addrlen) == -1) {
 		std::cerr << "ERROR: fallo en [sendTo]\n";
+		close(sd);
 		return -1;
 	}
 
 	if (recvfrom(sd, buffer, MAXBUFFER - 1, 0, res->ai_addr, &res->ai_addrlen) == -1) {
 		std::cerr << "ERROR: fallo en [recvfrom]\n";      
+		close(sd);
                 return -1;
         }
 	std::cout << buffer << "\n";

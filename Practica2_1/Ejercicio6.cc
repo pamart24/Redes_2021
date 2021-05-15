@@ -10,9 +10,9 @@
 const size_t MAXBUFFER = 80;
 const int MAXTHREAD = 5;
 
-class Thread {
+class MyThread {
 public:
-	Thread(int id, int sd) : id_(id), sd_(sd) {};
+	MyThread(int id, int sd) : id_(id), sd_(sd) {};
 	
 	void message() {
 		bool activo = true;
@@ -116,8 +116,8 @@ int main(int argc, char** argv) {
 	freeaddrinfo(res);
 	
 	for (int id = 0; id < MAXTHREAD; ++id) {
-		Thread* thrd = new Thread(sd, id);
-		std::thread(thrd->message(), delete thrd).detach();
+		MyThread* thrd = new MyThread(sd, id);
+		std::thread([&thrd]() { thrd->message(); delete thrd; }).detach();
 	}
 
 	//Leemos entradas hasta que se procese una 'q'

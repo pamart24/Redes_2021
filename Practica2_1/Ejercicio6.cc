@@ -9,7 +9,7 @@
 #include <thread>
 
 const size_t MAXBUFFER = 80;
-#define MAX_THREAD 5
+#define MAXTHREAD 5
 
 class MsgThread{
 private:
@@ -73,7 +73,7 @@ public:
 
 int main(int argc, char** argv) {
 	if (argc != 3) {
-		std::cerr << "Uso: ./Ejercicio2 [IP] [puerto]\n";
+		std::cerr << "Uso: ./Ejercicio6 [IP] [puerto]\n";
 		return -1;
 	}
 
@@ -105,14 +105,10 @@ int main(int argc, char** argv) {
 	}
 
 	freeaddrinfo(res);
-
 	
-	for(int i = 0; i < MAX_THREAD; i++){
-		MsgThread* th = new MsgThread(sd, i);
-		std::thread([&th]() {
-		th->haz_mensaje();
-		delete th;
-		}).detach();
+	for(int i = 0; i < MAXTHREAD; i++){
+		MsgThread* thr = new MsgThread(sd, i);
+		std::thread([&thr]() { thr->haz_mensaje(); delete thr; }).detach();
 	}	
 	
 	std::string q = "_";

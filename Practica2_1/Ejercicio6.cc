@@ -5,84 +5,75 @@
 #include <iostream>
 #include <time.h>
 #include <unistd.h>
+
 #include <thread>
 
 const size_t MAXBUFFER = 80;
-const int MAXTHREAD = 5;
+#define MAX_THREAD 5
 
-class MyThread {
+class MsgThread{
+private:
+	int sd;
+	int id;
 public:
-	MyThread(int id, int sd) : id_(id), sd_(sd) {};
-	
-	void message() {
-		bool activo = true;
+	MsgThread(int sd_, int i_) : sd(sd_), id(i_){}
+	void haz_mensaje(){
 		time_t tiempo;
 		size_t tam;
 		char buffer[MAXBUFFER];
 		char host[NI_MAXHOST];
 		char serv[NI_MAXSERV];
-
-		struct sockaddr cliente;
+		
+		struct sockaddr cliente;	
 		socklen_t clientelen = sizeof(struct sockaddr);
 
-		while(activo) {
-			sleep(3);
-
-	                int bytes = recvfrom(sd_, (void *) buffer, MAXBUFFER - 1,
-       		                 '\0', &cliente, &clientelen);
-       		        if (bytes == -1) {
-                        	std::cerr << "ERROR: no se reciben bytes\n";
-                        	return;
-                	}
-
-	                buffer[bytes] = '\0';
-
-	                getnameinfo(&cliente, clientelen, host, NI_MAXHOST,
-	                                serv, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
-
-	                std::cout << bytes << " bytes de " << host << ":" << serv << ":"
-				  << std::this_thread::get_id() << "\n";
-
-	                switch(buffer[0]) {
+		while(true){	
+			int bytes = recvfrom(sd, (void *) buffer, MAXBUFFER - 1,
+				'\0', &cliente, &clientelen);
+			
+			if (bytes == -1) {
+				std::cerr << "ERROR: no se reciben bytes\n";
+	                	return;
+			}
+	
+			buffer[bytes] = '\0';
+	
+			getnameinfo(&cliente, clientelen, host, NI_MAXHOST,
+					serv, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+	
+			std::cout << bytes << " bytes de " << host << ":" << serv << "\n";
+	
+			switch(buffer[0]) {
 				//Devolvemos la hora
 				case 't':
-	                                time(&tiempo);
-	                                tam = strftime(buffer, MAXBUFFER - 1, "%T %p",
-	                                        localtime(&tiempo));
-
-	                                sendto(sd_, buffer, tam, 0, &cliente, clientelen);
-	                                buffer[tam] = '\0';
-	                                break;
+					time(&tiempo);
+					tam = strftime(buffer, MAXBUFFER - 1, "%T %p",
+						localtime(&tiempo));
+	
+					sendto(sd, buffer, tam, 0, &cliente, clientelen);
+					buffer[tam] = '\0';
+					break;
 				//Devolvemos la fecha
 				case 'd':
-	                                time(&tiempo);
-	                                tam = strftime(buffer, MAXBUFFER - 1, "%F",
+					time(&tiempo);
+					tam = strftime(buffer, MAXBUFFER - 1, "%F",
 	                                        localtime(&tiempo));
-
-	                                sendto(sd_, buffer, tam, 0, &cliente, clientelen);
-	                                buffer[tam] = '\0';
-	                                break;
-	                        //Cerramos el proceso del servidor
-	                      	case 'q':
-	                                std::cout << "Saliendo...\n";
-	                                activo = false;
-	                                break;
-	                        //Comando no soportado
-	                       	default:
-	                                std::cout << "Comando no soportado " << buffer[0] << "\n";
-	                                break;
-	                }
+	
+					sendto(sd, buffer, tam, 0, &cliente, clientelen);
+					buffer[tam] = '\0';
+					break;
+				//Comando no soportado
+				default:
+					std::cout << "Comando no soportado " << buffer[0] << "\n";
+					break;
+			}
 		}
 	}
-
-private:
-	int id_;
-	int sd_;
 };
 
 int main(int argc, char** argv) {
 	if (argc != 3) {
-		std::cerr << "Uso: ./Ejercicio6 [IP] [puerto]\n";
+		std::cerr << "Uso: ./Ejercicio2 [IP] [puerto]\n";
 		return -1;
 	}
 
@@ -110,24 +101,25 @@ int main(int argc, char** argv) {
 
 	if (bind(sd, res->ai_addr, res->ai_addrlen) == -1) {
 		std::cerr << "ERROR: fallo en la asignacion de addr a socket\n";
-		close(sd);
 		return -1;
 	}
 
 	freeaddrinfo(res);
-	
-	for (int id = 0; id < MAXTHREAD; ++id) {
-		MyThread* thrd = new MyThread(sd, id);
-		std::thread([&thrd]() { thrd->message(); delete thrd; }).detach();
-	}
 
-	//Leemos entradas hasta que se procese una 'q'
-	std::string q;
-	std::cin >> q;
-	while (q != "q") {
+	
+	for(int i = 0; i < MAX_THREAD; i++){
+		MsgThread* th = new MsgThread(sd, i);
+		std::thread([&th]() {
+		th->haz_mensaje();
+		delete th;
+		}).detach();
+	}	
+	
+	std::string q = "_";
+	while(q != "q"){
 		std::cin >> q;
 	}
-
+	
 	close(sd);
 	return 0;
 }

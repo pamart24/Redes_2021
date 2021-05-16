@@ -5,13 +5,19 @@
 #include <iostream>
 #include <unistd.h>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 const size_t MAXBUFFER = 80;
-const int MAXLISTEN = 5;
+#define MAXLISTEN 3
+
+std::condition_variable numCv;
+std::mutex numMutex;
+int numListen = 0;
 
 class MyThread {
 public:
-	MyThread(int clientesd) : clientesd_(clientesd) {};
+	MyThread(int clientesd, int id) : clientesd_(clientesd), id_(id) {};
 	
 	void connections() {
 		bool activo = true;
@@ -30,10 +36,20 @@ public:
 		}
 
 		close(clientesd_);
+
+		numMutex.lock();
+		numListen--;
+		
+		if(numListen < MAXLISTEN){
+			numCv.notify_all();
+		}
+
+		numMutex.unlock();
 	}
 
 private:
 	int clientesd_;
+	int id_;
 };
 
 int main(int argc, char** argv) {
@@ -49,7 +65,7 @@ int main(int argc, char** argv) {
 	
 	hints.ai_flags = AI_PASSIVE;
 	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_socktype = SOCK_STREAM;
 
 	int rc = getaddrinfo(argv[1], argv[2], &hints, &res);
 	
@@ -72,30 +88,43 @@ int main(int argc, char** argv) {
 
 	freeaddrinfo(res);
 	
-	if (listen(sd, 1) == -1) {
+	if (listen(sd, MAXLISTEN) == -1) {
 		std::cerr << "ERROR: fallo en listen\n";
 		return -1;
 	}
-
+	
+	//int id = 0;
 	while(true) {
-		char host[NI_MAXHOST];
-		char serv[NI_MAXSERV];
-
 		struct sockaddr cliente;
 		socklen_t clientelen = sizeof(struct sockaddr);
-		int clientesd = accept(sd, (struct sockaddr *) &cliente, &clientelen);
 
+		{
+			std::unique_lock<std::mutex> lck(numMutex);
+		        while(numListen >= MAXLISTEN){
+				std::cout << "No se puede conectar, el servidor está lleno...\n";
+				numCv.wait(lck);
+			}
+		}
+
+		int clientesd = accept(sd, (struct sockaddr *) &cliente, &clientelen);
 		if (clientesd == -1) {
 	                std::cerr << "ERROR: fallo en accept\n";
 			close(sd);
 	                return -1;
 		}
 
-		getnameinfo(&cliente, clientelen, host, NI_MAXHOST, serv, NI_MAXSERV,
-			NI_NUMERICHOST | NI_NUMERICSERV);
+		char host[NI_MAXHOST];
+		char serv[NI_MAXSERV];
+
+		getnameinfo((struct sockaddr *) &cliente, clientelen, host, NI_MAXHOST,
+			serv, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
 		std::cout << "Conexión desde " << host << " " << serv << "\n";
 
-		MyThread* thrd = new MyThread(clientesd);
+		numMutex.lock();
+		numListen++;
+		numMutex.unlock();
+
+		MyThread* thrd = new MyThread(clientesd, numListen);
 		std::thread([&thrd]() { thrd->connections(); delete thrd; }).detach();
 	}
 

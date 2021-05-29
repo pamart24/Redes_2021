@@ -61,6 +61,9 @@ int main(int argc, char **argv)
 
     // 1. Serializar el objeto one_w
     // 2. Escribir la serialización en un fichero
+    // 3. Leer el fichero
+    // 4. "Deserializar" en one_r
+    // 5. Mostrar el contenido de one_r
 	
     //1
     one_w.to_bin();
@@ -73,6 +76,22 @@ int main(int argc, char **argv)
 	std::cout << "WARNING: no all info was saved\n";
 
     close(fd);
+
+    //3
+    fd = open("./player1_data.txt", O_RDONLY, 0666);
+    char buffer[tam];
+
+    if (read(fd, &buffer, tam) == -1) {
+	std::cerr << "ERROR: error while reading: ./player1_data.txt\n";
+	return -1;
+    }
+    close(fd);
+
+    //4
+    one_r.from_bin(buffer);
+
+    //5
+    std::cout << "Nombre de one_r: " << one_r.name << "| x: " << one_r.getX() << ", y: " << one_r.getY() << "\n";
 
     return 0;
 }

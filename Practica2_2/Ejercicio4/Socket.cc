@@ -87,6 +87,10 @@ bool operator== (const Socket &s1, const Socket &s2)
     else return true;
 };
 
+bool operator!= (const Socket &s1, const Socket &s2) {
+    return !(s1 == s2);
+};
+
 std::ostream& operator<<(std::ostream& os, const Socket& s)
 {
     char host[NI_MAXHOST];

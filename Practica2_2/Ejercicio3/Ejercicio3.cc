@@ -9,12 +9,14 @@
 #include <string.h>
 #include <unistd.h>
 
+#define MAX_NAME 80
+
 class Jugador: public Serializable
 {
 public:
     Jugador(const char * _n, int16_t _x, int16_t _y):x(_x),y(_y)
     {
-        strncpy(name, _n, 80);
+        strncpy(name, _n, MAX_NAME);
     };
 
     virtual ~Jugador(){};
